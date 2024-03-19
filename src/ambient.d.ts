@@ -4,10 +4,10 @@ type Product = {
     updatedAt: Date;
     deletedAt: Date;
     name: string;
-    decsription: string;
+    description: string;
     code: string;
     price: number;
-    categoryId: string;
+    categories: Category[];
 };
 
 type Category = {
@@ -23,10 +23,18 @@ type Category = {
 
 }
 
-type P = {
+type ProductResponse = {
+    data: Product;
+}
+
+type CategoryResponse = {
+    data: Category;
+}
+
+type ProductsResponse = {
     data: Product[];
 };
 
-type C = {
+type CategoriesResponse = {
     data: Category[];
 }
