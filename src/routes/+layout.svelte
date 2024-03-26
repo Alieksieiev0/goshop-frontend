@@ -8,10 +8,13 @@
 	import { AppBar } from '@skeletonlabs/skeleton';
 	import '../app.pcss';
 	import CategoryFormModal from '$lib/CategoryFormModal.svelte';
+	import HeaderActions from '$lib/HeaderActions.svelte';
+	import ProductFormModal from '$lib/ProductFormModal.svelte';
 
 	initializeStores();
 	const modalRegistry: Record<string, ModalComponent> = {
-		categoryForm: { ref: CategoryFormModal }
+		categoryForm: { ref: CategoryFormModal },
+		productForm: { ref: ProductFormModal }
 	};
 
 	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -21,10 +24,16 @@
 <Toast />
 <AppShell>
 	<svelte:fragment slot="header">
-		<AppBar>
-			<svelte:fragment slot="lead">(icon)</svelte:fragment>
-			(title)
-			<svelte:fragment slot="trail">(actions)</svelte:fragment>
+		<AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
+			<svelte:fragment slot="lead">
+				<a href="/" title="Go to Homepage">
+					<h3 class="h3">Decadence Shop</h3>
+				</a>
+			</svelte:fragment>
+
+			<svelte:fragment slot="trail">
+				<HeaderActions />
+			</svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
 	<slot />

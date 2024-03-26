@@ -1,17 +1,18 @@
 <script lang="ts">
-	import { Autocomplete, getModalStore, getToastStore, popup } from '@skeletonlabs/skeleton';
+	import { Autocomplete, getModalStore, popup } from '@skeletonlabs/skeleton';
 	import type { AutocompleteOption, ModalSettings, PopupSettings } from '@skeletonlabs/skeleton';
 	import { search } from '$lib/search';
-	import snakecaseKeys from 'snakecase-keys';
-	import camelcaseKeys from 'camelcase-keys';
 
-	const modalStore = getModalStore();
-	const toastStore = getToastStore();
-	export let product: Product;
 	let categoryOptions: AutocompleteOption<string>[] = [];
+	let denyOptions: string[] = [];
 	let query: string;
-	let categoryId: string;
-	let categoryName: string;
+	export const formData = {
+		name: '',
+		description: '',
+		code: '',
+		price: 0,
+		categories: [] as Category[]
+	};
 
 	let popupSettings: PopupSettings = {
 		event: 'focus-click',
@@ -27,87 +28,82 @@
 
 	function handleCategorySelection(event: CustomEvent<AutocompleteOption<string>>): void {
 		query = event.detail.label;
-		categoryName = event.detail.label;
-		categoryId = event.detail.value;
+		let category = {} as Category;
+		category.name = event.detail.label;
+		category.id = event.detail.value;
+
+		formData.categories = [category, ...formData.categories];
+		denyOptions = [category.name, ...denyOptions];
 	}
 
-	function handleNewCategory() {
-		new Promise<boolean>((resolve) => {
-			const modal: ModalSettings = {
-				title: 'Category',
-				body: 'Complete the form below to create new category',
-				type: 'component',
-				component: 'categoryForm',
-				response: (r: boolean) => {
-					resolve(r);
-				}
-			};
-			modalStore.trigger(modal);
-		}).then((r: any) => {
-			const category = r as Category;
-			query = category.name;
-			categoryName = category.name;
-			categoryId = category.id;
-		});
-	}
-
-	async function handleSubmit(event: { currentTarget: EventTarget & HTMLFormElement }) {
-		if (event.currentTarget.search.value !== categoryName) {
-			toastStore.trigger({
-				message: 'Selected category is not valid, or category is not selected at all.',
-				hoverable: true,
-				background: 'variant-filled-error'
-			});
-			return;
-		}
-
-		let requestProduct: any = {};
-		new FormData(event.currentTarget).forEach((value, key) => (requestProduct[key] = value));
-		requestProduct['categories'] = [{ id: categoryId } as Category];
-
-		let json = JSON.stringify(snakecaseKeys(requestProduct));
-		let res = await fetch('http://localhost:3000/products', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: json
-		});
-
-		product = camelcaseKeys((await res.json()) as Product);
+	function handleRemove(index: number) {
+		console.log(formData.categories);
+		formData.categories.splice(index, 1);
+		denyOptions.splice(index, 1);
+		console.log(formData.categories);
 	}
 </script>
 
-<form class="mx-auto max-w-sm" method="POST" on:submit|preventDefault={handleSubmit}>
+<form class="modal-form space-y-4 border border-surface-500 p-4 rounded-container-token">
 	<label class="label">
 		<span>Name</span>
-		<input class="input" type="text" name="name" placeholder="Enter name..." required />
+		<input
+			class="input"
+			type="text"
+			bind:value={formData.name}
+			placeholder="Enter name..."
+			required
+		/>
 	</label>
 	<label class="label">
 		<span>Description</span>
-		<textarea class="textarea" rows="4" name="description" placeholder="Enter description..." />
+		<textarea
+			class="textarea"
+			rows="4"
+			bind:value={formData.description}
+			placeholder="Enter description..."
+		/>
 	</label>
 	<label class="label">
 		<span>Code</span>
-		<input class="input" type="text" name="code" placeholder="Enter code..." required />
+		<input
+			class="input"
+			type="text"
+			bind:value={formData.code}
+			placeholder="Enter code..."
+			required
+		/>
 	</label>
 	<label class="label">
 		<span>Price</span>
 		<input
 			class="input"
 			type="number"
-			name="price"
+			bind:value={formData.price}
 			placeholder="Enter price..."
 			step="0.01"
+			min="0"
 			required
 		/>
 	</label>
+	<div class="container mx-auto">
+		<p class="mb-4 text-xl font-bold">Selected Categories</p>
+		<ul class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+			{#each formData.categories as category, i}
+				<li class="rounded-md bg-gray-100 p-4 shadow-md">
+					<span class="text-lg font-semibold">{category.name}</span>
+					<button on:click={() => handleRemove(i)} class="ml-2 text-red-600 hover:text-red-700">
+						Remove
+					</button>
+				</li>
+			{/each}
+		</ul>
+	</div>
 	<label class="label">
 		<span>Category</span>
 		<input
 			class="autocomplete input"
 			type="search"
-			name="search"
 			bind:value={query}
 			placeholder="Enter category name..."
 			use:popup={popupSettings}
@@ -121,12 +117,8 @@
 		<Autocomplete
 			bind:input={query}
 			options={categoryOptions}
+			denylist={denyOptions}
 			on:selection={handleCategorySelection}
 		/>
 	</div>
-
-	<button type="button" class="variant-ringed-primary btn my-4 w-full" on:click={handleNewCategory}
-		>New Category</button
-	>
-	<button type="submit" class="variant-filled-primary btn w-full">Submit Form</button>
 </form>

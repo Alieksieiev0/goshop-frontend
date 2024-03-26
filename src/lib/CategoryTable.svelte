@@ -1,59 +1,48 @@
 <script lang="ts">
-	import snakecaseKeys from 'snakecase-keys';
-	import { fetchProducts } from './fetch';
 	import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
-	import { PUBLIC_BASE_URL } from '$env/static/public';
-
 	const modalStore = getModalStore();
-	let products: Product[] = [];
+	let categories: Category[] = [];
 
-	$: products;
+	$: categories;
 
-	fetchProducts().then((response) => {
-		products = response;
-	});
-
-	function handleNewProduct() {
+	function handleNewCategory() {
 		new Promise<boolean>((resolve) => {
 			const modal: ModalSettings = {
-				title: 'Product',
+				title: 'Category',
 				body: 'Complete the form below to create new product',
 				type: 'component',
-				component: 'productForm',
+				component: 'categoryForm',
 				response: (r: boolean) => {
 					resolve(r);
 				}
 			};
 			modalStore.trigger(modal);
 		}).then((r: any) => {
-			const product = r as Product;
-			if (product) {
-				products = [product, ...products];
+			const category = r as Category;
+			if (category) {
+				categories = [category, ...categories];
 			}
 		});
 	}
 
 	async function handleDelete(index: number) {
-		await fetch(PUBLIC_BASE_URL + `/products/${products[index].id}`, {
+		await fetch(`http://localhost:3000/category/${categories[index].id}`, {
 			method: 'DELETE'
-		});
-		fetchProducts().then((response) => {
-			products = response;
 		});
 	}
 </script>
 
-<button type="button" class="variant-ringed-primary btn my-4 w-full" on:click={handleNewProduct}
-	>New Product</button
->
+<button type="button" class="variant-ringed-primary btn my-4 w-full" on:click={handleNewCategory}>
+	New Category
+</button>
+
 <div class="table-container">
 	<table class="table table-hover">
 		<thead>
 			<tr>
 				<th>Name</th>
 				<th>Description</th>
-				<th>Code</th>
-				<th>Price</th>
+				<th>Parent</th>
 				<th>Created At</th>
 				<th>Updated At</th>
 				<th></th>
@@ -61,14 +50,17 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each products as product, i}
+			{#each categories as category, i}
 				<tr>
-					<td>{product.name}</td>
-					<td>{product.description}</td>
-					<td>{product.code} </td>
-					<td>{product.price} </td>
-					<td>{product.createdAt}</td>
-					<td>{product.updatedAt} </td>
+					<td>{category.name}</td>
+					<td>{category.description}</td>
+					<td>
+						{#if category.parent}
+							{category.parent.name}
+						{/if}
+					</td>
+					<td>{category.createdAt}</td>
+					<td>{category.updatedAt} </td>
 					<td>
 						<button
 							on:click={() => handleDelete(i)}

@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
 	import type { SvelteComponent } from 'svelte';
-	import CategoryForm from './CategoryForm.svelte';
 	import camelcaseKeys from 'camelcase-keys';
-	import snakecaseKeys from 'snakecase-keys';
 	import { PUBLIC_BASE_URL } from '$env/static/public';
+	import ProductForm from './ProductForm.svelte';
+	const modalStore = getModalStore();
 
 	export let parent: SvelteComponent;
 	let error: ResponseError;
 	let formData = {
 		name: '',
 		description: '',
-		parentName: '',
-		parentId: ''
+		code: '',
+		price: 0,
+		categories: [] as Category[]
 	};
 
 	async function handleSave(): Promise<void> {
-		const storageUser = localStorage.getItem('user');
-		if (!storageUser) {
+		if (formData.categories.length === 0) {
 			error = {
-				error: 'Operation is not allowed for the guest users'
+				error: 'Product must have at least 1 related category.'
 			};
 			return;
 		}
@@ -31,39 +31,39 @@
 			return;
 		}
 
-		if (!formData.description) {
+		if (!formData.code) {
 			error = {
-				error: 'Description field is empty'
+				error: 'Code field is empty'
 			};
 			return;
 		}
 
-		const user = JSON.parse(storageUser) as TokenUser;
-		let res = await fetch(PUBLIC_BASE_URL + '/categories', {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${user.token}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(snakecaseKeys(formData))
-		});
-
-		if (res.status !== 201) {
-			error = (await res.json()) as ResponseError;
+		if (!formData.price) {
+			error = {
+				error: 'Incorrect price'
+			};
 			return;
 		}
-		const category = camelcaseKeys((await res.json()) as Category);
-		if ($modalStore[0].response) $modalStore[0].response(category);
+
+		let res = await fetch(PUBLIC_BASE_URL + '/products', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(formData)
+		});
+
+		const product = camelcaseKeys((await res.json()) as ProductResponse);
+		if ($modalStore[0].response) $modalStore[0].response(product);
 		modalStore.close();
 	}
-	const modalStore = getModalStore();
 </script>
 
 {#if $modalStore[0]}
 	<div class="modal-example-form card w-modal space-y-4 p-4 shadow-xl">
 		<header class="text-2xl font-bold">{$modalStore[0].title ?? '(title missing)'}</header>
 		<article>{$modalStore[0].body ?? '(body missing)'}</article>
-		<CategoryForm bind:formData />
+		<ProductForm bind:formData />
 		{#if error}
 			<p class="text-center text-lg text-red-600">{error.error}</p>
 		{/if}

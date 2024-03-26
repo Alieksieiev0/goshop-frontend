@@ -16,7 +16,7 @@ type Category = {
     updatedAt: Date;
     deletedAt: Date;
     name: string;
-    decsription: string;
+    description: string;
     parentId: number;
     parent: Category;
     products: Product[];
@@ -38,3 +38,28 @@ type ProductsResponse = {
 type CategoriesResponse = {
     data: Category[];
 }
+
+type ResponseError = {
+    error: string
+}
+
+type ResponseToken = {
+    token: string
+}
+
+type User = {
+    id: string
+    username: string
+    email: string
+    role: string
+}
+
+type ResponseUser = {
+    data: User;
+}
+
+type TokenUser = {
+    exp: number
+    alg: string
+    token: string
+} & User
